@@ -1,0 +1,246 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <defs>
+    <!-- Aqua gradients for Navy background -->
+    <linearGradient id="hexGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00e5ff;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#00b8d4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0097a7;stop-opacity:0.8" />
+    </linearGradient>
+    <linearGradient id="innerGrad" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#84ffff;stop-opacity:0.9" />
+      <stop offset="100%" style="stop-color:#00e5ff;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="dotGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e0f7fa;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00e5ff;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="brightGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="blur1"/>
+      <feGaussianBlur stdDeviation="6" result="blur2"/>
+      <feMerge>
+        <feMergeNode in="blur2"/>
+        <feMergeNode in="blur1"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Outer hex with glow -->
+  <g filter="url(#glow)">
+    <polygon points="100,20 169,60 169,140 100,180 31,140 31,60" 
+             fill="none" stroke="url(#hexGrad)" stroke-width="2.5" opacity="0.9"/>
+  </g>
+
+  <!-- Middle hex -->
+  <polygon points="100,45 150,74 150,126 100,155 50,126 50,74" 
+           fill="none" stroke="url(#innerGrad)" stroke-width="1.8" opacity="0.75"/>
+
+  <!-- Inner hex -->
+  <polygon points="100,65 133,84 133,116 100,135 67,116 67,84" 
+           fill="rgba(0,229,255,0.08)" stroke="#00e5ff" stroke-width="1.2" opacity="0.6"/>
+
+  <!-- Radial lines from center to vertices -->
+  <line x1="100" y1="100" x2="100" y2="20" stroke="url(#hexGrad)" stroke-width="1.2" opacity="0.5"/>
+  <line x1="100" y1="100" x2="169" y2="60" stroke="url(#hexGrad)" stroke-width="1.2" opacity="0.5"/>
+  <line x1="100" y1="100" x2="169" y2="140" stroke="url(#hexGrad)" stroke-width="1.2" opacity="0.5"/>
+  <line x1="100" y1="100" x2="100" y2="180" stroke="url(#hexGrad)" stroke-width="1.2" opacity="0.5"/>
+  <line x1="100" y1="100" x2="31" y2="140" stroke="url(#hexGrad)" stroke-width="1.2" opacity="0.5"/>
+  <line x1="100" y1="100" x2="31" y2="60" stroke="url(#hexGrad)" stroke-width="1.2" opacity="0.5"/>
+
+  <!-- Inter-vertex connections (hexagon edges) -->
+  <line x1="100" y1="20" x2="169" y2="60" stroke="url(#innerGrad)" stroke-width="0.8" opacity="0.35"/>
+  <line x1="169" y1="60" x2="169" y2="140" stroke="url(#innerGrad)" stroke-width="0.8" opacity="0.35"/>
+  <line x1="169" y1="140" x2="100" y2="180" stroke="url(#innerGrad)" stroke-width="0.8" opacity="0.35"/>
+  <line x1="100" y1="180" x2="31" y2="140" stroke="url(#innerGrad)" stroke-width="0.8" opacity="0.35"/>
+  <line x1="31" y1="140" x2="31" y2="60" stroke="url(#innerGrad)" stroke-width="0.8" opacity="0.35"/>
+  <line x1="31" y1="60" x2="100" y2="20" stroke="url(#innerGrad)" stroke-width="0.8" opacity="0.35"/>
+
+  <!-- ===== TRAVELING SHINING DOTS ON RADIAL LINES (center to outer vertices) ===== -->
+
+  <!-- Line 1: Center (100,100) to Top (100,20) -->
+  <circle r="4" fill="#ffffff" filter="url(#brightGlow)" opacity="0.95">
+    <animate attributeName="cy" values="100;20;100" dur="4s" repeatCount="indefinite" begin="0s"/>
+    <animate attributeName="cx" values="100;100;100" dur="4s" repeatCount="indefinite" begin="0s"/>
+    <animate attributeName="opacity" values="0;1;0" dur="4s" repeatCount="indefinite" begin="0s"/>
+    <animate attributeName="r" values="2;5;2" dur="4s" repeatCount="indefinite" begin="0s"/>
+  </circle>
+  <circle r="3" fill="#00e5ff" filter="url(#softGlow)" opacity="0.7">
+    <animate attributeName="cy" values="100;20;100" dur="4s" repeatCount="indefinite" begin="0.1s"/>
+    <animate attributeName="cx" values="100;100;100" dur="4s" repeatCount="indefinite" begin="0.1s"/>
+    <animate attributeName="opacity" values="0;0.8;0" dur="4s" repeatCount="indefinite" begin="0.1s"/>
+  </circle>
+
+  <!-- Line 2: Center to Top-Right (169,60) -->
+  <circle r="4" fill="#ffffff" filter="url(#brightGlow)" opacity="0.95">
+    <animate attributeName="cy" values="100;60;100" dur="4s" repeatCount="indefinite" begin="0.67s"/>
+    <animate attributeName="cx" values="100;169;100" dur="4s" repeatCount="indefinite" begin="0.67s"/>
+    <animate attributeName="opacity" values="0;1;0" dur="4s" repeatCount="indefinite" begin="0.67s"/>
+    <animate attributeName="r" values="2;5;2" dur="4s" repeatCount="indefinite" begin="0.67s"/>
+  </circle>
+  <circle r="3" fill="#00e5ff" filter="url(#softGlow)" opacity="0.7">
+    <animate attributeName="cy" values="100;60;100" dur="4s" repeatCount="indefinite" begin="0.77s"/>
+    <animate attributeName="cx" values="100;169;100" dur="4s" repeatCount="indefinite" begin="0.77s"/>
+    <animate attributeName="opacity" values="0;0.8;0" dur="4s" repeatCount="indefinite" begin="0.77s"/>
+  </circle>
+
+  <!-- Line 3: Center to Bottom-Right (169,140) -->
+  <circle r="4" fill="#ffffff" filter="url(#brightGlow)" opacity="0.95">
+    <animate attributeName="cy" values="100;140;100" dur="4s" repeatCount="indefinite" begin="1.33s"/>
+    <animate attributeName="cx" values="100;169;100" dur="4s" repeatCount="indefinite" begin="1.33s"/>
+    <animate attributeName="opacity" values="0;1;0" dur="4s" repeatCount="indefinite" begin="1.33s"/>
+    <animate attributeName="r" values="2;5;2" dur="4s" repeatCount="indefinite" begin="1.33s"/>
+  </circle>
+  <circle r="3" fill="#00e5ff" filter="url(#softGlow)" opacity="0.7">
+    <animate attributeName="cy" values="100;140;100" dur="4s" repeatCount="indefinite" begin="1.43s"/>
+    <animate attributeName="cx" values="100;169;100" dur="4s" repeatCount="indefinite" begin="1.43s"/>
+    <animate attributeName="opacity" values="0;0.8;0" dur="4s" repeatCount="indefinite" begin="1.43s"/>
+  </circle>
+
+  <!-- Line 4: Center to Bottom (100,180) -->
+  <circle r="4" fill="#ffffff" filter="url(#brightGlow)" opacity="0.95">
+    <animate attributeName="cy" values="100;180;100" dur="4s" repeatCount="indefinite" begin="2s"/>
+    <animate attributeName="cx" values="100;100;100" dur="4s" repeatCount="indefinite" begin="2s"/>
+    <animate attributeName="opacity" values="0;1;0" dur="4s" repeatCount="indefinite" begin="2s"/>
+    <animate attributeName="r" values="2;5;2" dur="4s" repeatCount="indefinite" begin="2s"/>
+  </circle>
+  <circle r="3" fill="#00e5ff" filter="url(#softGlow)" opacity="0.7">
+    <animate attributeName="cy" values="100;180;100" dur="4s" repeatCount="indefinite" begin="2.1s"/>
+    <animate attributeName="cx" values="100;100;100" dur="4s" repeatCount="indefinite" begin="2.1s"/>
+    <animate attributeName="opacity" values="0;0.8;0" dur="4s" repeatCount="indefinite" begin="2.1s"/>
+  </circle>
+
+  <!-- Line 5: Center to Bottom-Left (31,140) -->
+  <circle r="4" fill="#ffffff" filter="url(#brightGlow)" opacity="0.95">
+    <animate attributeName="cy" values="100;140;100" dur="4s" repeatCount="indefinite" begin="2.67s"/>
+    <animate attributeName="cx" values="100;31;100" dur="4s" repeatCount="indefinite" begin="2.67s"/>
+    <animate attributeName="opacity" values="0;1;0" dur="4s" repeatCount="indefinite" begin="2.67s"/>
+    <animate attributeName="r" values="2;5;2" dur="4s" repeatCount="indefinite" begin="2.67s"/>
+  </circle>
+  <circle r="3" fill="#00e5ff" filter="url(#softGlow)" opacity="0.7">
+    <animate attributeName="cy" values="100;140;100" dur="4s" repeatCount="indefinite" begin="2.77s"/>
+    <animate attributeName="cx" values="100;31;100" dur="4s" repeatCount="indefinite" begin="2.77s"/>
+    <animate attributeName="opacity" values="0;0.8;0" dur="4s" repeatCount="indefinite" begin="2.77s"/>
+  </circle>
+
+  <!-- Line 6: Center to Top-Left (31,60) -->
+  <circle r="4" fill="#ffffff" filter="url(#brightGlow)" opacity="0.95">
+    <animate attributeName="cy" values="100;60;100" dur="4s" repeatCount="indefinite" begin="3.33s"/>
+    <animate attributeName="cx" values="100;31;100" dur="4s" repeatCount="indefinite" begin="3.33s"/>
+    <animate attributeName="opacity" values="0;1;0" dur="4s" repeatCount="indefinite" begin="3.33s"/>
+    <animate attributeName="r" values="2;5;2" dur="4s" repeatCount="indefinite" begin="3.33s"/>
+  </circle>
+  <circle r="3" fill="#00e5ff" filter="url(#softGlow)" opacity="0.7">
+    <animate attributeName="cy" values="100;60;100" dur="4s" repeatCount="indefinite" begin="3.43s"/>
+    <animate attributeName="cx" values="100;31;100" dur="4s" repeatCount="indefinite" begin="3.43s"/>
+    <animate attributeName="opacity" values="0;0.8;0" dur="4s" repeatCount="indefinite" begin="3.43s"/>
+  </circle>
+
+  <!-- ===== TRAVELING DOTS ON OUTER HEX EDGES ===== -->
+
+  <!-- Edge 1: Top (100,20) to Top-Right (169,60) -->
+  <circle r="3" fill="#84ffff" filter="url(#softGlow)">
+    <animate attributeName="cy" values="20;60;20" dur="5s" repeatCount="indefinite" begin="0.2s"/>
+    <animate attributeName="cx" values="100;169;100" dur="5s" repeatCount="indefinite" begin="0.2s"/>
+    <animate attributeName="opacity" values="0;0.9;0" dur="5s" repeatCount="indefinite" begin="0.2s"/>
+  </circle>
+
+  <!-- Edge 2: Top-Right (169,60) to Bottom-Right (169,140) -->
+  <circle r="3" fill="#84ffff" filter="url(#softGlow)">
+    <animate attributeName="cy" values="60;140;60" dur="5s" repeatCount="indefinite" begin="1.03s"/>
+    <animate attributeName="cx" values="169;169;169" dur="5s" repeatCount="indefinite" begin="1.03s"/>
+    <animate attributeName="opacity" values="0;0.9;0" dur="5s" repeatCount="indefinite" begin="1.03s"/>
+  </circle>
+
+  <!-- Edge 3: Bottom-Right (169,140) to Bottom (100,180) -->
+  <circle r="3" fill="#84ffff" filter="url(#softGlow)">
+    <animate attributeName="cy" values="140;180;140" dur="5s" repeatCount="indefinite" begin="1.87s"/>
+    <animate attributeName="cx" values="169;100;169" dur="5s" repeatCount="indefinite" begin="1.87s"/>
+    <animate attributeName="opacity" values="0;0.9;0" dur="5s" repeatCount="indefinite" begin="1.87s"/>
+  </circle>
+
+  <!-- Edge 4: Bottom (100,180) to Bottom-Left (31,140) -->
+  <circle r="3" fill="#84ffff" filter="url(#softGlow)">
+    <animate attributeName="cy" values="180;140;180" dur="5s" repeatCount="indefinite" begin="2.7s"/>
+    <animate attributeName="cx" values="100;31;100" dur="5s" repeatCount="indefinite" begin="2.7s"/>
+    <animate attributeName="opacity" values="0;0.9;0" dur="5s" repeatCount="indefinite" begin="2.7s"/>
+  </circle>
+
+  <!-- Edge 5: Bottom-Left (31,140) to Top-Left (31,60) -->
+  <circle r="3" fill="#84ffff" filter="url(#softGlow)">
+    <animate attributeName="cy" values="140;60;140" dur="5s" repeatCount="indefinite" begin="3.53s"/>
+    <animate attributeName="cx" values="31;31;31" dur="5s" repeatCount="indefinite" begin="3.53s"/>
+    <animate attributeName="opacity" values="0;0.9;0" dur="5s" repeatCount="indefinite" begin="3.53s"/>
+  </circle>
+
+  <!-- Edge 6: Top-Left (31,60) to Top (100,20) -->
+  <circle r="3" fill="#84ffff" filter="url(#softGlow)">
+    <animate attributeName="cy" values="60;20;60" dur="5s" repeatCount="indefinite" begin="4.37s"/>
+    <animate attributeName="cx" values="31;100;31" dur="5s" repeatCount="indefinite" begin="4.37s"/>
+    <animate attributeName="opacity" values="0;0.9;0" dur="5s" repeatCount="indefinite" begin="4.37s"/>
+  </circle>
+
+  <!-- ===== STATIONARY VERTEX DOTS (breathing) ===== -->
+  <circle cx="100" cy="20" r="5" fill="url(#dotGrad)" filter="url(#softGlow)">
+    <animate attributeName="opacity" values="1;0.4;1" dur="3s" repeatCount="indefinite"/>
+    <animate attributeName="r" values="5;6;5" dur="3s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="169" cy="60" r="4.5" fill="url(#dotGrad)" filter="url(#softGlow)">
+    <animate attributeName="opacity" values="0.4;1;0.4" dur="3s" repeatCount="indefinite" begin="0.5s"/>
+    <animate attributeName="r" values="4.5;5.5;4.5" dur="3s" repeatCount="indefinite" begin="0.5s"/>
+  </circle>
+  <circle cx="169" cy="140" r="4" fill="url(#dotGrad)" filter="url(#softGlow)">
+    <animate attributeName="opacity" values="1;0.4;1" dur="3s" repeatCount="indefinite" begin="1s"/>
+    <animate attributeName="r" values="4;5;4" dur="3s" repeatCount="indefinite" begin="1s"/>
+  </circle>
+  <circle cx="100" cy="180" r="5" fill="url(#dotGrad)" filter="url(#softGlow)">
+    <animate attributeName="opacity" values="0.4;1;0.4" dur="3s" repeatCount="indefinite" begin="1.5s"/>
+    <animate attributeName="r" values="5;6;5" dur="3s" repeatCount="indefinite" begin="1.5s"/>
+  </circle>
+  <circle cx="31" cy="140" r="4.5" fill="url(#dotGrad)" filter="url(#softGlow)">
+    <animate attributeName="opacity" values="1;0.4;1" dur="3s" repeatCount="indefinite" begin="2s"/>
+    <animate attributeName="r" values="4.5;5.5;4.5" dur="3s" repeatCount="indefinite" begin="2s"/>
+  </circle>
+  <circle cx="31" cy="60" r="4" fill="url(#dotGrad)" filter="url(#softGlow)">
+    <animate attributeName="opacity" values="0.4;1;0.4" dur="3s" repeatCount="indefinite" begin="2.5s"/>
+    <animate attributeName="r" values="4;5;4" dur="3s" repeatCount="indefinite" begin="2.5s"/>
+  </circle>
+
+  <!-- Middle hex dots (subtle breathing) -->
+  <circle cx="100" cy="45" r="2.5" fill="#84ffff" opacity="0.6">
+    <animate attributeName="opacity" values="0.6;0.2;0.6" dur="4s" repeatCount="indefinite" begin="0.3s"/>
+  </circle>
+  <circle cx="150" cy="74" r="2.5" fill="#84ffff" opacity="0.6">
+    <animate attributeName="opacity" values="0.6;0.2;0.6" dur="4s" repeatCount="indefinite" begin="0.8s"/>
+  </circle>
+  <circle cx="150" cy="126" r="2.5" fill="#84ffff" opacity="0.6">
+    <animate attributeName="opacity" values="0.6;0.2;0.6" dur="4s" repeatCount="indefinite" begin="1.3s"/>
+  </circle>
+  <circle cx="100" cy="155" r="2.5" fill="#84ffff" opacity="0.6">
+    <animate attributeName="opacity" values="0.6;0.2;0.6" dur="4s" repeatCount="indefinite" begin="1.8s"/>
+  </circle>
+  <circle cx="50" cy="126" r="2.5" fill="#84ffff" opacity="0.6">
+    <animate attributeName="opacity" values="0.6;0.2;0.6" dur="4s" repeatCount="indefinite" begin="2.3s"/>
+  </circle>
+  <circle cx="50" cy="74" r="2.5" fill="#84ffff" opacity="0.6">
+    <animate attributeName="opacity" values="0.6;0.2;0.6" dur="4s" repeatCount="indefinite" begin="2.8s"/>
+  </circle>
+
+  <!-- Center core -->
+  <circle cx="100" cy="100" r="8" fill="url(#dotGrad)" filter="url(#softGlow)"/>
+  <circle cx="100" cy="100" r="4" fill="#ffffff"/>
+</svg>
