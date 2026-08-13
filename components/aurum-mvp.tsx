@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { supabase, saveExpenseToDatabase, saveProfileToDatabase } from '@/lib/supabase'
 import {
   ArrowUpRight,
   BarChart3,
@@ -747,31 +748,38 @@ export function AurumMvp() {
   async function generate() { setLoading(true); try { const response = await fetch('/api/recommend', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(profile) }); const data = await response.json(); if (response.ok) setRecommendation(data) } finally { setLoading(false) } }
   async function refreshMarket() { setRefreshing(true); try { const response = await fetch('/api/market?refresh=1'); const data = await response.json(); if (data?.news) setMarket(data) } finally { setRefreshing(false) } }
   if (!user) return <AuthScreen onAuth={auth} language={language} onLanguageChange={changeLanguage} />
-  if (wizardOpen) return <WealthWizard initialLanguage={language} onClose={() => setWizardOpen(false)} onComplete={(data) => { const newProfile = mapWizardToProfile(data); setProfile(newProfile); setRecommendation(null); setWizardOpen(false); setActiveView('portfolio'); window.localStorage.setItem('aurum-demo-profile', JSON.stringify(newProfile)); }} />
+  // Generate or get user ID for database tracking
+  const getUserId = () => {
+    let userId = localStorage.getItem('aurum_user_id')
+    if (!userId) {
+      userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+      localStorage.setItem('aurum_user_id', userId)
+    }
+    return userId
+  }
+
+  if (wizardOpen) return <WealthWizard initialLanguage={language} onClose={() => setWizardOpen(false)} onComplete={async (data) => { 
+    const newProfile = mapWizardToProfile(data)
+    setProfile(newProfile)
+    setRecommendation(null)
+    setWizardOpen(false)
+    setActiveView('portfolio')
+    window.localStorage.setItem('aurum-demo-profile', JSON.stringify(newProfile))
+    
+    // Save profile to Supabase
+    const userId = getUserId()
+    await saveProfileToDatabase({
+      user_id: userId,
+      name: user,
+      email: user + '@demo.local',
+      monthly_income: newProfile.monthlyIncome || 0,
+      currency: 'USD'
+    })
+  }} />
   return <main className="app-shell"><aside className={mobileNav ? 'sidebar open' : 'sidebar'}><div className="sidebar-top"><Logo /><button className="close-nav" onClick={() => setMobileNav(false)}><X size={18} /></button></div><nav><p className="nav-label">Workspace</p><button className={`nav-item ${activeView === 'overview' ? 'active' : ''}`} onClick={() => setActiveView('overview')}><LayoutDashboard size={17} /> {t.overview}</button><button className="nav-item" onClick={() => setWizardOpen(true)}><Wallet size={17} /> Wealth Onboarding</button><button className={`nav-item ${activeView === 'portfolio' ? 'active' : ''}`} onClick={() => setActiveView('portfolio')}><WalletCards size={17} /> {t.portfolio}</button><button className={`nav-item ${activeView === 'action-plan' ? 'active' : ''}`} onClick={() => setActiveView('action-plan')}><Target size={17} /> Action Plan</button><button className={`nav-item ${activeView === 'expense-input' ? 'active' : ''}`} onClick={() => setActiveView('expense-input')}><Edit3 size={17} /> {t.expenseInput}</button><button className={`nav-item ${activeView === 'expense-analysis' ? 'active' : ''}`} onClick={() => setActiveView('expense-analysis')}><PieChart size={17} /> {t.expenseAnalysis}</button><button className="nav-item"><BarChart3 size={17} /> {t.market}</button><button className="nav-item"><BookOpen size={17} /> {t.learn}</button><p className="nav-label spaced">Your progress</p><div className="progress-card"><div className="progress-icon"><Gauge size={16} /></div><strong>Investor profile</strong><span>80% complete</span><div className="progress-line"><i /></div></div></nav><div className="sidebar-bottom"><button className="nav-item"><Bell size={17} /> Alerts <span className="notification-dot" /></button><button className="profile-mini"><span className="avatar">{user.slice(0, 1)}</span><span><strong>{user}</strong><small>Free account</small></span><ChevronRight size={15} /></button><button className="logout" onClick={() => { setUser(null); setRecommendation(null); window.localStorage.removeItem('aurum-demo-user') }}><LogOut size={15} /> Log out</button></div></aside><div className="main-content"><header className="topbar"><button className="mobile-menu" onClick={() => setMobileNav(true)}><Menu size={20} /></button><div><p className="topbar-kicker">Wednesday, August 5, 2026</p><h1>Good morning, {user.split(' ')[0]} <span>—</span> let&apos;s make progress.</h1></div><div className="topbar-actions"><LanguageSelect language={language} onChange={changeLanguage} /><button className="icon-button"><Bell size={17} /><i /></button><div className="avatar large">{user.slice(0, 1)}</div></div></header><Assistant language={language} profile={profile} recommendation={recommendation} market={market} /><div className="ticker"><span className="live-indicator" /> Live market snapshot <div className="ticker-track">{market.pulse.map((item) => <span key={item.name}><strong>{item.name}</strong> {item.value} <em className={item.tone}>{item.change}</em></span>)}</div></div>{activeView === 'overview' ? <div className="content-wrap"><section className="welcome-block"><div><p className="eyebrow"><Sparkles size={14} /> Your personal money cockpit</p><h2>Clarity compounds.</h2><p>Here&apos;s the signal from your financial picture, plus a few places to focus next.</p></div><div className="date-chip"><CircleDollarSign size={16} /> Updated just now</div></section>{!recommendation ? <ProfileForm profile={profile} setProfile={setProfile} onGenerate={generate} loading={loading} /> : <><RecommendationCard recommendation={recommendation} onEdit={() => setRecommendation(null)} /><MarketPanel market={market} onRefresh={refreshMarket} refreshing={refreshing} /></>}</div> : activeView === 'portfolio' ? <MyPlanView profile={profile} recommendation={recommendation} language={language} /> : activeView === 'expense-input' ? <ExpenseInputView language={language} expenseItems={expenseItems} budgets={budgets} onUpdateItems={handleUpdateExpenseItems} onUpdateBudgets={handleUpdateBudgets} /> : activeView === 'expense-analysis' ? <ExpenseAnalysisView language={language} expenseItems={expenseItems} monthlyIncome={monthlyIncome} /> : <ActionPlanView profile={profile} recommendation={recommendation} language={language} />}</div></main>
 }
 
 // ============ EXPENSE INPUT VIEW ============
-
-type ExpenseItem = {
-  id: string
-  title: string
-  merchant: string
-  category: 'subscriptions' | 'transport' | 'groceries' | 'utilities' | 'housing' | 'other'
-  amount: number
-  cadence: 'weekly' | 'monthly' | 'quarterly' | 'annually'
-  startDate: string
-  essential: boolean
-  autoLink: boolean
-  notes?: string
-  confidence?: 'high' | 'medium' | 'low'
-  override?: boolean
-}
-
-type CategoryBudget = {
-  category: string
-  ceiling: number
-}
 
 function ExpenseInputView({ language, expenseItems, budgets, onUpdateItems, onUpdateBudgets }: { language: Language, expenseItems: ExpenseItem[], budgets: CategoryBudget[], onUpdateItems: (items: ExpenseItem[]) => void, onUpdateBudgets: (budgets: CategoryBudget[]) => void }) {
   const t = uiCopy[language]
@@ -818,7 +826,7 @@ function ExpenseInputView({ language, expenseItems, budgets, onUpdateItems, onUp
   const totalBudget = localBudgets.reduce((sum, b) => sum + b.ceiling, 0)
   const budgetUtilization = (monthlyTotals / totalBudget) * 100
   
-  const handleAdd = (item: ExpenseItem) => {
+  const handleAdd = async (item: ExpenseItem) => {
     let updated: ExpenseItem[]
     if (editingItem) {
       updated = items.map(i => i.id === editingItem.id ? item : i)
@@ -829,6 +837,16 @@ function ExpenseInputView({ language, expenseItems, budgets, onUpdateItems, onUp
     onUpdateItems(updated)
     setShowAddModal(false)
     setEditingItem(null)
+    
+    // Save to Supabase database
+    const userId = getUserId()
+    await saveExpenseToDatabase({
+      user_id: userId,
+      expense_name: item.title,
+      amount: item.amount,
+      category: item.category,
+      is_recurring: true
+    })
   }
   
   const handleDelete = (id: string) => {
