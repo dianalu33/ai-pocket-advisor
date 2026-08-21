@@ -1,13 +1,13 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { supabase, saveExpenseToDatabase, saveProfileToDatabase } from '@/lib/supabase'
 import {
   ArrowUpRight,
   BarChart3,
   Bell,
   BookOpen,
   BrainCircuit,
+  Building2,
   Calendar,
   Check,
   ChevronRight,
@@ -37,6 +37,8 @@ import {
   Zap,
 } from 'lucide-react'
 import { WealthWizard } from './wealth-wizard'
+import { RealEstateView } from './real-estate-view'
+
 
 type Language = 'en' | 'yue' | 'zh'
 type ChatMessage = { role: 'user' | 'assistant'; content: string }
@@ -105,6 +107,22 @@ type CategoryBudget = {
   ceiling: number
 }
 
+// Real Estate Asset type
+type RealEstateAsset = {
+  id: string
+  propertyName: string
+  district: string
+  propertyType: 'residential' | 'commercial' | 'industrial'
+  sizeSqFt: number
+  purchasePrice: number
+  currentValue: number
+  isRented: boolean
+  monthlyRent: number
+  monthlyExpenses: number
+  mortgageBalance: number
+  occupancyStatus: 'owner-occupied' | 'tenant' | 'vacant'
+}
+
 type Profile = {
   age: number
   salary: number
@@ -116,6 +134,7 @@ type Profile = {
   timeline: number
   risk: 'conservative' | 'balanced' | 'growth'
   interests: string[]
+  realEstateAssets: RealEstateAsset[]
 }
 
 type Recommendation = {
@@ -148,6 +167,7 @@ const defaultProfile: Profile = {
   timeline: 10,
   risk: 'balanced',
   interests: ['Index funds', 'Crypto', 'HYSA'],
+  realEstateAssets: []
 }
 
 const fallbackMarket: Market = {
@@ -196,9 +216,9 @@ const defaultBudgets: CategoryBudget[] = [
 const interestOptions = ['Index funds', 'Mutual funds', 'REITs', 'Crypto', 'HYSA', 'Bonds']
 
 const uiCopy = {
-  en: { assistant: 'AI Pocket Advisor', ask: 'Ask your immediate assistant', overview: 'Overview', portfolio: 'My Portfolio', expenses: 'Expenses', expenseInput: 'Expense Input', expenseAnalysis: 'Expense Analysis', market: 'Market', learn: 'Learn', logout: 'Log out', greeting: 'let’s make progress.', welcome: 'Welcome to AI Pocket Advisor', language: 'Language' },
-  yue: { assistant: 'AI Pocket Advisor', ask: '問下你嘅即時助手', overview: '概覽', portfolio: '我嘅組合', expenses: '支出', expenseInput: '輸入支出', expenseAnalysis: '分析支出', market: '市場', learn: '學習', logout: '登出', greeting: '一齊向前行。', welcome: '歡迎使用 AI Pocket Advisor', language: '語言' },
-  zh: { assistant: 'AI Pocket Advisor', ask: '询问你的即时助手', overview: '概览', portfolio: '我的组合', expenses: '支出', expenseInput: '输入支出', expenseAnalysis: '分析支出', market: '市场', learn: '学习', logout: '退出登录', greeting: '一起向前进。', welcome: '欢迎使用 AI Pocket Advisor', language: '语言' },
+  en: { assistant: 'AI Pocket Advisor', ask: 'Ask your immediate assistant', overview: 'Overview', portfolio: 'My Portfolio', expenses: 'Expenses', expenseInput: 'Expense Input', expenseAnalysis: 'Expense Analysis', market: 'Market', learn: 'Learn', logout: 'Log out', greeting: "let's make progress.", welcome: 'Welcome to AI Pocket Advisor', language: 'Language', realEstateAssets: 'Real Estate Assets', addProperty: 'Add Property', propertyName: 'Property Name', district: 'District', propertyType: 'Property Type', size: 'Size (sq ft)', purchasePrice: 'Purchase Price', currentValue: 'Current Value', monthlyRent: 'Monthly Rent', isRented: 'Rented Out', monthlyExpenses: 'Monthly Expenses', mortgageBalance: 'Mortgage Balance', remove: 'Remove', totalValue: 'Total Value', totalRentalIncome: 'Total Rental Income', residential: 'Residential', commercial: 'Commercial', industrial: 'Industrial', ownerOccupied: 'Owner Occupied', tenant: 'Tenant', vacant: 'Vacant' },
+  yue: { assistant: 'AI Pocket Advisor', ask: '問下你嘅即時助手', overview: '概覽', portfolio: '我嘅組合', expenses: '支出', expenseInput: '輸入支出', expenseAnalysis: '分析支出', market: '市場', learn: '學習', logout: '登出', greeting: '一齊向前行。', welcome: '歡迎使用 AI Pocket Advisor', language: '語言', realEstateAssets: '樓盤資產', addProperty: '加寫樓盤', propertyName: '樓盤名稱', district: '地區', propertyType: '樓盤類型', size: '面積(平方呎)', purchasePrice: '買入價', currentValue: '現時價值', monthlyRent: '每月租金', isRented: '有出租', monthlyExpenses: '每月使費', mortgageBalance: '按揭餘額', remove: '移除', totalValue: '總值', totalRentalIncome: '租金收入總額', residential: '住宅', commercial: '商用', industrial: '工商', ownerOccupied: '自住', tenant: '出租', vacant: '空置' },
+  zh: { assistant: 'AI Pocket Advisor', ask: '询问你的即时助手', overview: '概览', portfolio: '我的组合', expenses: '支出', expenseInput: '输入支出', expenseAnalysis: '分析支出', market: '市场', learn: '学习', logout: '退出登录', greeting: '一起向前进。', welcome: '欢迎使用 AI Pocket Advisor', language: '语言', realEstateAssets: '房产资产', addProperty: '添加房产', propertyName: '房产名称', district: '地区', propertyType: '房产类型', size: '面积(平方尺)', purchasePrice: '买入价', currentValue: '当前价值', monthlyRent: '月租', isRented: '已出租', monthlyExpenses: '每月开支', mortgageBalance: '按揭余额', remove: '删除', totalValue: '总值', totalRentalIncome: '租金收入总额', residential: '住宅', commercial: '商用', industrial: '工业', ownerOccupied: '自住', tenant: '出租', vacant: '空置' },
 } as const
 
 function money(value: number) {
@@ -306,7 +326,7 @@ function Assistant({ language, profile, recommendation, market }: { language: La
   return <><button className="assistant-launcher" aria-label={t.assistant} onClick={() => setOpen(true)}><MessageCircle size={19} /><span>{t.assistant}</span><i /></button>{open && <section className="assistant-panel" aria-label={t.assistant}><header><div><strong>{t.assistant}</strong><span>{t.ask}</span></div><button aria-label="Close assistant" onClick={() => setOpen(false)}><X size={17} /></button></header><div className="assistant-messages">{messages.length === 0 && <div className="assistant-welcome"><Sparkles size={18} /><p>{language === 'yue' ? '你好！我可以幫你睇下個人化投資計劃。' : language === 'zh' ? '你好！我可以帮你看看个性化投资计划。' : 'Hi! I can help you understand your personalized investment plan.'}</p></div>}{messages.map((message, index) => <div key={`${message.role}-${index}`} className={`chat-message ${message.role}`}>{message.content}</div>)}{sending && <div className="chat-message assistant">...</div>}</div><div className="assistant-suggestions">{suggestions.map((suggestion) => <button key={suggestion} onClick={() => send(suggestion)}>{suggestion}</button>)}</div><form onSubmit={(event) => { event.preventDefault(); void send() }}><input value={input} onChange={(event) => setInput(event.target.value)} placeholder={language === 'yue' ? '輸入問題…' : language === 'zh' ? '输入问题…' : 'Ask a question…'} /><button aria-label="Send message" type="submit"><ArrowUpRight size={17} /></button></form></section>}</>
 }
 
-function MyPlanView({ profile, recommendation, language }: { profile: Profile; recommendation: Recommendation | null; language: Language }) {
+function MyPlanView({ profile, recommendation, language, realEstateAssets, onUpdateRealEstateAssets }: { profile: Profile; recommendation: Recommendation | null; language: Language; realEstateAssets: RealEstateAsset[]; onUpdateRealEstateAssets: (assets: RealEstateAsset[]) => void }) {
   const t = uiCopy[language]
   const hasProfile = profile.age > 0
   
@@ -371,6 +391,182 @@ function MyPlanView({ profile, recommendation, language }: { profile: Profile; r
               </div>
             </section>
           )}
+
+          {/* Real Estate Assets Section */}
+          <section className="panel real-estate-section">
+            <div className="section-header">
+              <h3><Building2 size={18} /> {t.realEstateAssets}</h3>
+              <button className="add-asset-btn" onClick={() => {
+                const newAsset: RealEstateAsset = {
+                  id: Date.now().toString(),
+                  propertyName: '',
+                  district: '',
+                  propertyType: 'residential',
+                  sizeSqFt: 0,
+                  purchasePrice: 0,
+                  currentValue: 0,
+                  isRented: false,
+                  monthlyRent: 0,
+                  monthlyExpenses: 0,
+                  mortgageBalance: 0,
+                  occupancyStatus: 'owner-occupied'
+                }
+                onUpdateRealEstateAssets([...realEstateAssets, newAsset])
+              }}>
+                <Plus size={16} /> {t.addProperty}
+              </button>
+            </div>
+            
+            {realEstateAssets.length === 0 ? (
+              <div className="empty-assets">
+                <p>No real estate assets added yet. Click "Add Property" to track your properties.</p>
+              </div>
+            ) : (
+              <div className="assets-grid">
+                {realEstateAssets.map((asset, index) => (
+                  <div key={asset.id} className="asset-card">
+                    <div className="asset-header">
+                      <input 
+                        type="text" 
+                        placeholder={t.propertyName}
+                        value={asset.propertyName}
+                        onChange={(e) => {
+                          const updated = [...realEstateAssets]
+                          updated[index].propertyName = e.target.value
+                          onUpdateRealEstateAssets(updated)
+                        }}
+                        className="asset-input"
+                      />
+                      <button className="remove-btn" onClick={() => {
+                        const updated = realEstateAssets.filter((_, i) => i !== index)
+                        onUpdateRealEstateAssets(updated)
+                      }}><Trash2 size={14} /></button>
+                    </div>
+                    
+                    <div className="asset-fields">
+                      <div className="field-row">
+                        <label>{t.district}</label>
+                        <input 
+                          type="text"
+                          value={asset.district}
+                          onChange={(e) => {
+                            const updated = [...realEstateAssets]
+                            updated[index].district = e.target.value
+                            onUpdateRealEstateAssets(updated)
+                          }}
+                          placeholder="e.g. Kowloon City"
+                        />
+                      </div>
+                      
+                      <div className="field-row">
+                        <label>{t.propertyType}</label>
+                        <select 
+                          value={asset.propertyType}
+                          onChange={(e) => {
+                            const updated = [...realEstateAssets]
+                            updated[index].propertyType = e.target.value as 'residential' | 'commercial' | 'industrial'
+                            onUpdateRealEstateAssets(updated)
+                          }}
+                        >
+                          <option value="residential">{t.residential}</option>
+                          <option value="commercial">{t.commercial}</option>
+                          <option value="industrial">{t.industrial}</option>
+                        </select>
+                      </div>
+                      
+                      <div className="field-row">
+                        <label>{t.size} (sq ft)</label>
+                        <input 
+                          type="number"
+                          value={asset.sizeSqFt || ''}
+                          onChange={(e) => {
+                            const updated = [...realEstateAssets]
+                            updated[index].sizeSqFt = Number(e.target.value)
+                            onUpdateRealEstateAssets(updated)
+                          }}
+                          placeholder="0"
+                        />
+                      </div>
+                      
+                      <div className="field-row">
+                        <label>{t.currentValue} (HKD)</label>
+                        <input 
+                          type="number"
+                          value={asset.currentValue || ''}
+                          onChange={(e) => {
+                            const updated = [...realEstateAssets]
+                            updated[index].currentValue = Number(e.target.value)
+                            onUpdateRealEstateAssets(updated)
+                          }}
+                          placeholder="0"
+                        />
+                      </div>
+                      
+                      <div className="field-row checkbox">
+                        <label>
+                          <input 
+                            type="checkbox"
+                            checked={asset.isRented}
+                            onChange={(e) => {
+                              const updated = [...realEstateAssets]
+                              updated[index].isRented = e.target.checked
+                              updated[index].occupancyStatus = e.target.checked ? 'tenant' : 'owner-occupied'
+                              onUpdateRealEstateAssets(updated)
+                            }}
+                          />
+                          {t.isRented}
+                        </label>
+                      </div>
+                      
+                      {asset.isRented && (
+                        <div className="field-row">
+                          <label>{t.monthlyRent} (HKD)</label>
+                          <input 
+                            type="number"
+                            value={asset.monthlyRent || ''}
+                            onChange={(e) => {
+                              const updated = [...realEstateAssets]
+                              updated[index].monthlyRent = Number(e.target.value)
+                              onUpdateRealEstateAssets(updated)
+                            }}
+                            placeholder="0"
+                          />
+                        </div>
+                      )}
+                      
+                      <div className="field-row">
+                        <label>{t.mortgageBalance} (HKD)</label>
+                        <input 
+                          type="number"
+                          value={asset.mortgageBalance || ''}
+                          onChange={(e) => {
+                            const updated = [...realEstateAssets]
+                            updated[index].mortgageBalance = Number(e.target.value)
+                            onUpdateRealEstateAssets(updated)
+                          }}
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {/* Summary */}
+            {realEstateAssets.length > 0 && (
+              <div className="assets-summary">
+                <div className="summary-row">
+                  <span>{t.totalValue}:</span>
+                  <strong>HKD {realEstateAssets.reduce((sum, a) => sum + (a.currentValue || 0), 0).toLocaleString()}</strong>
+                </div>
+                <div className="summary-row">
+                  <span>{t.totalRentalIncome}:</span>
+                  <strong>HKD {realEstateAssets.filter(a => a.isRented).reduce((sum, a) => sum + (a.monthlyRent || 0), 0).toLocaleString()}/mo</strong>
+                </div>
+              </div>
+            )}
+          </section>
         </>
       )}
 
@@ -681,12 +877,15 @@ export function AurumMvp() {
   const [refreshing, setRefreshing] = useState(false)
   const [mobileNav, setMobileNav] = useState(false)
   const [wizardOpen, setWizardOpen] = useState(false)
-  const [activeView, setActiveView] = useState<'overview' | 'portfolio' | 'expense-input' | 'expense-analysis' | 'action-plan'>('overview')
+  const [activeView, setActiveView] = useState<'overview' | 'portfolio' | 'expense-input' | 'expense-analysis' | 'action-plan' | 'real-estate'>('overview')
 
   // Shared expense state (persisted)
   const [expenseItems, setExpenseItems] = useState<ExpenseItem[]>(defaultExpenseItems)
   const [budgets, setBudgets] = useState<CategoryBudget[]>(defaultBudgets)
   const [monthlyIncome, setMonthlyIncome] = useState<number>(5200)
+
+  // Real Estate Assets state
+  const [realEstateAssets, setRealEstateAssets] = useState<RealEstateAsset[]>([])
 
   // Load persisted expense data
   useEffect(() => {
@@ -708,6 +907,16 @@ export function AurumMvp() {
   useEffect(() => {
     window.localStorage.setItem('aurum-monthly-income', String(monthlyIncome))
   }, [monthlyIncome])
+
+  // Persist Real Estate data
+  useEffect(() => {
+    const savedAssets = window.localStorage.getItem('aurum-real-estate-assets')
+    if (savedAssets) setRealEstateAssets(JSON.parse(savedAssets))
+  }, [])
+
+  useEffect(() => {
+    window.localStorage.setItem('aurum-real-estate-assets', JSON.stringify(realEstateAssets))
+  }, [realEstateAssets])
 
   // Expense update functions passed to child views
   const handleUpdateExpenseItems = (items: ExpenseItem[]) => setExpenseItems(items)
@@ -763,7 +972,15 @@ export function AurumMvp() {
     setProfile(newProfile)
     setRecommendation(null)
     setWizardOpen(false)
-    setActiveView('portfolio')
+    
+    // Check if user selected "Buy a home" as a goal - redirect to real estate page
+    const hasHomeGoal = data.goals && data.goals.some((g: Goal) => g.name === 'Buy a home' || g.name === '買樓' || g.name === '买房')
+    if (hasHomeGoal) {
+      setActiveView('real-estate')
+    } else {
+      setActiveView('portfolio')
+    }
+    
     window.localStorage.setItem('aurum-demo-profile', JSON.stringify(newProfile))
     
     // Save profile to Supabase
@@ -776,7 +993,7 @@ export function AurumMvp() {
       currency: 'USD'
     })
   }} />
-  return <main className="app-shell"><aside className={mobileNav ? 'sidebar open' : 'sidebar'}><div className="sidebar-top"><Logo /><button className="close-nav" onClick={() => setMobileNav(false)}><X size={18} /></button></div><nav><p className="nav-label">Workspace</p><button className={`nav-item ${activeView === 'overview' ? 'active' : ''}`} onClick={() => setActiveView('overview')}><LayoutDashboard size={17} /> {t.overview}</button><button className="nav-item" onClick={() => setWizardOpen(true)}><Wallet size={17} /> Wealth Onboarding</button><button className={`nav-item ${activeView === 'portfolio' ? 'active' : ''}`} onClick={() => setActiveView('portfolio')}><WalletCards size={17} /> {t.portfolio}</button><button className={`nav-item ${activeView === 'action-plan' ? 'active' : ''}`} onClick={() => setActiveView('action-plan')}><Target size={17} /> Action Plan</button><button className={`nav-item ${activeView === 'expense-input' ? 'active' : ''}`} onClick={() => setActiveView('expense-input')}><Edit3 size={17} /> {t.expenseInput}</button><button className={`nav-item ${activeView === 'expense-analysis' ? 'active' : ''}`} onClick={() => setActiveView('expense-analysis')}><PieChart size={17} /> {t.expenseAnalysis}</button><button className="nav-item"><BarChart3 size={17} /> {t.market}</button><button className="nav-item"><BookOpen size={17} /> {t.learn}</button><p className="nav-label spaced">Your progress</p><div className="progress-card"><div className="progress-icon"><Gauge size={16} /></div><strong>Investor profile</strong><span>80% complete</span><div className="progress-line"><i /></div></div></nav><div className="sidebar-bottom"><button className="nav-item"><Bell size={17} /> Alerts <span className="notification-dot" /></button><button className="profile-mini"><span className="avatar">{user.slice(0, 1)}</span><span><strong>{user}</strong><small>Free account</small></span><ChevronRight size={15} /></button><button className="logout" onClick={() => { setUser(null); setRecommendation(null); window.localStorage.removeItem('aurum-demo-user') }}><LogOut size={15} /> Log out</button></div></aside><div className="main-content"><header className="topbar"><button className="mobile-menu" onClick={() => setMobileNav(true)}><Menu size={20} /></button><div><p className="topbar-kicker">Wednesday, August 5, 2026</p><h1>Good morning, {user.split(' ')[0]} <span>—</span> let&apos;s make progress.</h1></div><div className="topbar-actions"><LanguageSelect language={language} onChange={changeLanguage} /><button className="icon-button"><Bell size={17} /><i /></button><div className="avatar large">{user.slice(0, 1)}</div></div></header><Assistant language={language} profile={profile} recommendation={recommendation} market={market} /><div className="ticker"><span className="live-indicator" /> Live market snapshot <div className="ticker-track">{market.pulse.map((item) => <span key={item.name}><strong>{item.name}</strong> {item.value} <em className={item.tone}>{item.change}</em></span>)}</div></div>{activeView === 'overview' ? <div className="content-wrap"><section className="welcome-block"><div><p className="eyebrow"><Sparkles size={14} /> Your personal money cockpit</p><h2>Clarity compounds.</h2><p>Here&apos;s the signal from your financial picture, plus a few places to focus next.</p></div><div className="date-chip"><CircleDollarSign size={16} /> Updated just now</div></section>{!recommendation ? <ProfileForm profile={profile} setProfile={setProfile} onGenerate={generate} loading={loading} /> : <><RecommendationCard recommendation={recommendation} onEdit={() => setRecommendation(null)} /><MarketPanel market={market} onRefresh={refreshMarket} refreshing={refreshing} /></>}</div> : activeView === 'portfolio' ? <MyPlanView profile={profile} recommendation={recommendation} language={language} /> : activeView === 'expense-input' ? <ExpenseInputView language={language} expenseItems={expenseItems} budgets={budgets} onUpdateItems={handleUpdateExpenseItems} onUpdateBudgets={handleUpdateBudgets} /> : activeView === 'expense-analysis' ? <ExpenseAnalysisView language={language} expenseItems={expenseItems} monthlyIncome={monthlyIncome} /> : <ActionPlanView profile={profile} recommendation={recommendation} language={language} />}</div></main>
+  return <main className="app-shell"><aside className={mobileNav ? 'sidebar open' : 'sidebar'}><div className="sidebar-top"><Logo /><button className="close-nav" onClick={() => setMobileNav(false)}><X size={18} /></button></div><nav><p className="nav-label">Workspace</p><button className={`nav-item ${activeView === 'overview' ? 'active' : ''}`} onClick={() => setActiveView('overview')}><LayoutDashboard size={17} /> {t.overview}</button><button className="nav-item" onClick={() => setWizardOpen(true)}><Wallet size={17} /> Wealth Onboarding</button><button className={`nav-item ${activeView === 'portfolio' ? 'active' : ''}`} onClick={() => setActiveView('portfolio')}><WalletCards size={17} /> {t.portfolio}</button><button className={`nav-item ${activeView === 'action-plan' ? 'active' : ''}`} onClick={() => setActiveView('action-plan')}><Target size={17} /> Action Plan</button><button className={`nav-item ${activeView === 'expense-input' ? 'active' : ''}`} onClick={() => setActiveView('expense-input')}><Edit3 size={17} /> {t.expenseInput}</button><button className={`nav-item ${activeView === 'expense-analysis' ? 'active' : ''}`} onClick={() => setActiveView('expense-analysis')}><PieChart size={17} /> {t.expenseAnalysis}</button><button className={`nav-item ${activeView === 'real-estate' ? 'active' : ''}`} onClick={() => setActiveView('real-estate')}><Building2 size={17} /> Real Estate</button><button className="nav-item"><BarChart3 size={17} /> {t.market}</button><button className="nav-item"><BookOpen size={17} /> {t.learn}</button><p className="nav-label spaced">Your progress</p><div className="progress-card"><div className="progress-icon"><Gauge size={16} /></div><strong>Investor profile</strong><span>80% complete</span><div className="progress-line"><i /></div></div></nav><div className="sidebar-bottom"><button className="nav-item"><Bell size={17} /> Alerts <span className="notification-dot" /></button><button className="profile-mini"><span className="avatar">{user.slice(0, 1)}</span><span><strong>{user}</strong><small>Free account</small></span><ChevronRight size={15} /></button><button className="logout" onClick={() => { setUser(null); setRecommendation(null); window.localStorage.removeItem('aurum-demo-user') }}><LogOut size={15} /> Log out</button></div></aside><div className="main-content"><header className="topbar"><button className="mobile-menu" onClick={() => setMobileNav(true)}><Menu size={20} /></button><div><p className="topbar-kicker">Wednesday, August 5, 2026</p><h1>Good morning, {user.split(' ')[0]} <span>—</span> let&apos;s make progress.</h1></div><div className="topbar-actions"><LanguageSelect language={language} onChange={changeLanguage} /><button className="icon-button"><Bell size={17} /><i /></button><div className="avatar large">{user.slice(0, 1)}</div></div></header><Assistant language={language} profile={profile} recommendation={recommendation} market={market} /><div className="ticker"><span className="live-indicator" /> Live market snapshot <div className="ticker-track">{market.pulse.map((item) => <span key={item.name}><strong>{item.name}</strong> {item.value} <em className={item.tone}>{item.change}</em></span>)}</div></div>{activeView === 'overview' ? <div className="content-wrap"><section className="welcome-block"><div><p className="eyebrow"><Sparkles size={14} /> Your personal money cockpit</p><h2>Clarity compounds.</h2><p>Here&apos;s the signal from your financial picture, plus a few places to focus next.</p></div><div className="date-chip"><CircleDollarSign size={16} /> Updated just now</div></section>{!recommendation ? <ProfileForm profile={profile} setProfile={setProfile} onGenerate={generate} loading={loading} /> : <><RecommendationCard recommendation={recommendation} onEdit={() => setRecommendation(null)} /><MarketPanel market={market} onRefresh={refreshMarket} refreshing={refreshing} /></>}</div> : activeView === 'portfolio' ? <MyPlanView profile={profile} recommendation={recommendation} language={language} realEstateAssets={realEstateAssets} onUpdateRealEstateAssets={setRealEstateAssets} /> : activeView === 'expense-input' ? <ExpenseInputView language={language} expenseItems={expenseItems} budgets={budgets} onUpdateItems={handleUpdateExpenseItems} onUpdateBudgets={handleUpdateBudgets} /> : activeView === 'expense-analysis' ? <ExpenseAnalysisView language={language} expenseItems={expenseItems} monthlyIncome={monthlyIncome} /> : activeView === 'real-estate' ? <RealEstateView language={language} userId={user} /> : <ActionPlanView profile={profile} recommendation={recommendation} language={language} />}</div></main>
 }
 
 // ============ EXPENSE INPUT VIEW ============
@@ -1270,6 +1487,175 @@ function ExpenseAnalysisView({ language, expenseItems, monthlyIncome }: { langua
           <span className="overview-value savings">{money(162)}</span>
           <span className="overview-sub">From 3 leaks found</span>
         </div>
+      </section>
+
+      {/* Real Estate Assets Section */}
+      <section className="panel real-estate-panel">
+        <div className="section-heading">
+          <h3><Building2 size={18} /> {t.realEstateAssets}</h3>
+          <button className="add-btn" onClick={() => {
+            const newAsset: RealEstateAsset = {
+              id: Date.now().toString(),
+              propertyName: '',
+              district: '',
+              propertyType: 'residential',
+              sizeSqFt: 0,
+              purchasePrice: 0,
+              currentValue: 0,
+              isRented: false,
+              monthlyRent: 0,
+              monthlyExpenses: 0,
+              mortgageBalance: 0,
+              occupancyStatus: 'owner-occupied'
+            }
+            setRealEstateAssets([...realEstateAssets, newAsset])
+          }}><Plus size={14} /> {t.addProperty}</button>
+        </div>
+        
+        {realEstateAssets.length === 0 ? (
+          <p className="empty-state">No properties added yet. Click "Add Property" to track your real estate assets.</p>
+        ) : (
+          <>
+            <div className="real-estate-summary">
+              <div className="summary-item">
+                <span className="summary-label">{t.totalValue}</span>
+                <span className="summary-value">{money(realEstateAssets.reduce((s, a) => s + a.currentValue, 0))}</span>
+              </div>
+              <div className="summary-item">
+                <span className="summary-label">{t.totalRentalIncome}</span>
+                <span className="summary-value income">{money(realEstateAssets.filter(a => a.isRented).reduce((s, a) => s + a.monthlyRent, 0))}/mo</span>
+              </div>
+            </div>
+            <div className="property-list">
+              {realEstateAssets.map((asset, index) => (
+                <div key={asset.id} className="property-card">
+                  <div className="property-header">
+                    <input 
+                      type="text" 
+                      placeholder={t.propertyName}
+                      value={asset.propertyName}
+                      onChange={(e) => {
+                        const updated = [...realEstateAssets]
+                        updated[index].propertyName = e.target.value
+                        setRealEstateAssets(updated)
+                      }}
+                      className="property-name-input"
+                    />
+                    <button className="remove-btn" onClick={() => {
+                      setRealEstateAssets(realEstateAssets.filter(a => a.id !== asset.id))
+                    }}><Trash2 size={14} /></button>
+                  </div>
+                  <div className="property-fields">
+                    <div className="field-row">
+                      <label>{t.district}</label>
+                      <input 
+                        type="text" 
+                        placeholder="e.g., Kowloon City, Central"
+                        value={asset.district}
+                        onChange={(e) => {
+                          const updated = [...realEstateAssets]
+                          updated[index].district = e.target.value
+                          setRealEstateAssets(updated)
+                        }}
+                      />
+                    </div>
+                    <div className="field-row">
+                      <label>{t.propertyType}</label>
+                      <select 
+                        value={asset.propertyType}
+                        onChange={(e) => {
+                          const updated = [...realEstateAssets]
+                          updated[index].propertyType = e.target.value as 'residential' | 'commercial' | 'industrial'
+                          setRealEstateAssets(updated)
+                        }}
+                      >
+                        <option value="residential">{t.residential}</option>
+                        <option value="commercial">{t.commercial}</option>
+                        <option value="industrial">{t.industrial}</option>
+                      </select>
+                    </div>
+                    <div className="field-row">
+                      <label>{t.size}</label>
+                      <input 
+                        type="number" 
+                        value={asset.sizeSqFt || ''}
+                        onChange={(e) => {
+                          const updated = [...realEstateAssets]
+                          updated[index].sizeSqFt = Number(e.target.value)
+                          setRealEstateAssets(updated)
+                        }}
+                      />
+                    </div>
+                    <div className="field-row">
+                      <label>{t.currentValue} (HKD)</label>
+                      <input 
+                        type="number" 
+                        value={asset.currentValue || ''}
+                        onChange={(e) => {
+                          const updated = [...realEstateAssets]
+                          updated[index].currentValue = Number(e.target.value)
+                          setRealEstateAssets(updated)
+                        }}
+                      />
+                    </div>
+                    <div className="field-row checkbox-row">
+                      <label>
+                        <input 
+                          type="checkbox" 
+                          checked={asset.isRented}
+                          onChange={(e) => {
+                            const updated = [...realEstateAssets]
+                            updated[index].isRented = e.target.checked
+                            setRealEstateAssets(updated)
+                          }}
+                        />
+                        {t.isRented}
+                      </label>
+                    </div>
+                    {asset.isRented && (
+                      <div className="field-row">
+                        <label>{t.monthlyRent} (HKD)</label>
+                        <input 
+                          type="number" 
+                          value={asset.monthlyRent || ''}
+                          onChange={(e) => {
+                            const updated = [...realEstateAssets]
+                            updated[index].monthlyRent = Number(e.target.value)
+                            setRealEstateAssets(updated)
+                          }}
+                        />
+                      </div>
+                    )}
+                    <div className="field-row">
+                      <label>{t.monthlyExpenses} (HKD)</label>
+                      <input 
+                        type="number" 
+                        value={asset.monthlyExpenses || ''}
+                        onChange={(e) => {
+                          const updated = [...realEstateAssets]
+                          updated[index].monthlyExpenses = Number(e.target.value)
+                          setRealEstateAssets(updated)
+                        }}
+                      />
+                    </div>
+                    <div className="field-row">
+                      <label>{t.mortgageBalance} (HKD)</label>
+                      <input 
+                        type="number" 
+                        value={asset.mortgageBalance || ''}
+                        onChange={(e) => {
+                          const updated = [...realEstateAssets]
+                          updated[index].mortgageBalance = Number(e.target.value)
+                          setRealEstateAssets(updated)
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </section>
       
       {/* Money Leak Engine */}

@@ -45,6 +45,19 @@ type DebtItem = {
   minPayment: number | null
 }
 
+type RealEstateAsset = {
+  id: string
+  propertyName: string
+  district: string
+  propertyType: 'residential' | 'commercial' | 'industrial' | 'parking' | 'other'
+  purchasePrice: number | null
+  currentValue: number | null
+  mortgageBalance: number | null
+  monthlyRent: number | null
+  isRented: boolean
+  monthlyExpenses: number | null // management fee, rates, maintenance
+}
+
 type Goal = {
   id: string
   name: string
@@ -55,10 +68,12 @@ type Goal = {
 type UserData = {
   age: number | null
   monthlyIncome: number | null
+  monthlyRentalIncome: number | null
   monthlyEssentialExpenses: number | null
   monthlyDiscretionary: number | null
   totalSavings: number | null
   debts: DebtItem[]
+  realEstateAssets: RealEstateAsset[]
   employmentStability: 'stable' | 'variable' | null
   riskScore: number
   goals: Goal[]
@@ -143,6 +158,7 @@ const uiCopy = {
     intakeDesc: 'This helps us build a personalized plan. You can skip any question.',
     qAge: 'What\'s your age?',
     qIncome: 'What\'s your monthly net income?',
+    qRentalIncome: 'Monthly rental income (if any)?',
     qEssential: 'Monthly essential expenses (rent, utilities, food)?',
     qDiscretionary: 'Monthly discretionary spending (entertainment, dining out)?',
     qSavings: 'Total savings you have',
@@ -153,6 +169,24 @@ const uiCopy = {
     qDebtPayment: 'Minimum monthly payment',
     addDebt: 'Add another debt',
     removeDebt: 'Remove',
+    // Real Estate translations
+    qRealEstate: 'Real Estate Assets',
+    addRealEstate: 'Add property',
+    removeRealEstate: 'Remove',
+    qPropertyName: 'Property name',
+    qDistrict: 'District/Location',
+    qPropertyType: 'Property type',
+    qPurchasePrice: 'Purchase price',
+    qCurrentValue: 'Current value',
+    qMortgageBalance: 'Mortgage balance',
+    qMonthlyRent: 'Monthly rent',
+    qMonthlyExpenses: 'Monthly expenses (fees, maintenance)',
+    qIsRented: 'Currently rented out?',
+    propertyTypeResidential: 'Residential',
+    propertyTypeCommercial: 'Commercial',
+    propertyTypeIndustrial: 'Industrial',
+    propertyTypeParking: 'Parking',
+    propertyTypeOther: 'Other',
     qEmployment: 'How stable is your employment?',
     employmentStable: 'Very stable',
     employmentVariable: 'Somewhat variable',
@@ -300,6 +334,7 @@ const uiCopy = {
     intakeDesc: '呢啲幫到我哋為你制定個性化計劃。你可以跳過任何問題。',
     qAge: '你幾多歲？',
     qIncome: '你每月淨收入係幾多？',
+    qRentalIncome: '每月租金收入（如果有）？',
     qEssential: '每月必要開支（租金、水電、食物）？',
     qDiscretionary: '每月彈性開支（娛樂、出去食）？',
     qSavings: '你總共有幾多儲蓄？',
@@ -310,6 +345,24 @@ const uiCopy = {
     qDebtPayment: '每月最低還款額',
     addDebt: '添加另一筆債務',
     removeDebt: '刪除',
+    // Real Estate translations
+    qRealEstate: '樓盤資產',
+    addRealEstate: '添加樓盤',
+    removeRealEstate: '刪除',
+    qPropertyName: '樓盤名稱',
+    qDistrict: '地區/位置',
+    qPropertyType: '樓盤類型',
+    qPurchasePrice: '購買價格',
+    qCurrentValue: '現時價值',
+    qMortgageBalance: '按揭餘額',
+    qMonthlyRent: '每月租金',
+    qMonthlyExpenses: '每月開支（管理費、維修）',
+    qIsRented: '目前有出租嗎？',
+    propertyTypeResidential: '住宅',
+    propertyTypeCommercial: '商舖',
+    propertyTypeIndustrial: '工業',
+    propertyTypeParking: '車位',
+    propertyTypeOther: '其他',
     qEmployment: '你份工有幾穩定？',
     employmentStable: '非常穩定',
     employmentVariable: '比較唔穩定',
@@ -448,6 +501,7 @@ const uiCopy = {
     intakeDesc: '这有助于我们制定个性化计划。您可以跳过任何问题。',
     qAge: '您今年多大？',
     qIncome: '您每月净收入是多少？',
+    qRentalIncome: '每月租金收入（如果有）？',
     qEssential: '每月必要开支（租金、水电、食物）？',
     qDiscretionary: '每月弹性开支（娱乐、外出就餐）？',
     qSavings: '您总共有多少储蓄？',
@@ -458,6 +512,24 @@ const uiCopy = {
     qDebtPayment: '每月最低还款额',
     addDebt: '添加另一笔债务',
     removeDebt: '删除',
+    // Real Estate translations
+    qRealEstate: '房产资产',
+    addRealEstate: '添加房产',
+    removeRealEstate: '删除',
+    qPropertyName: '房产名称',
+    qDistrict: '地区/位置',
+    qPropertyType: '房产类型',
+    qPurchasePrice: '购买价格',
+    qCurrentValue: '当前价值',
+    qMortgageBalance: '按揭余额',
+    qMonthlyRent: '每月租金',
+    qMonthlyExpenses: '每月开支（管理费、维修）',
+    qIsRented: '目前有出租吗？',
+    propertyTypeResidential: '住宅',
+    propertyTypeCommercial: '商业',
+    propertyTypeIndustrial: '工业',
+    propertyTypeParking: '车位',
+    propertyTypeOther: '其他',
     qEmployment: '您的就业有多稳定？',
     employmentStable: '非常稳定',
     employmentVariable: '不太稳定',
@@ -599,10 +671,12 @@ export function WealthWizard({
   const [userData, setUserData] = useState<UserData>({
     age: null,
     monthlyIncome: null,
-    monthlyEssentialExpenses: null,
+      monthlyRentalIncome: null,
+      monthlyEssentialExpenses: null,
     monthlyDiscretionary: null,
     totalSavings: null,
     debts: [],
+    realEstateAssets: [],
     employmentStability: null,
     riskScore: 5,
     goals: [],
@@ -664,20 +738,21 @@ export function WealthWizard({
     return userData.debts.reduce((sum, debt) => sum + (debt.minPayment || 0), 0)
   }
 
+  // Calculate total monthly income (salary + rental from survey + real estate rental)
+  const getTotalMonthlyIncome = () => (userData.monthlyIncome || 0) + (userData.monthlyRentalIncome || 0) + getTotalRealEstateRentalIncome()
+
   // Calculate financial metrics
   const metrics = {
-    savingsRate: userData.monthlyIncome && userData.monthlyEssentialExpenses && userData.monthlyDiscretionary
-      ? ((userData.monthlyIncome - userData.monthlyEssentialExpenses - userData.monthlyDiscretionary) / userData.monthlyIncome * 100)
+    savingsRate: getTotalMonthlyIncome() && userData.monthlyEssentialExpenses && userData.monthlyDiscretionary
+      ? ((getTotalMonthlyIncome() - userData.monthlyEssentialExpenses - userData.monthlyDiscretionary) / getTotalMonthlyIncome() * 100)
       : null,
-    dti: userData.monthlyIncome && getTotalDebt() > 0
-      ? ((getTotalMinPayment() / userData.monthlyIncome) * 100)
+    dti: getTotalMonthlyIncome() && getTotalDebt() > 0
+      ? ((getTotalMinPayment() / getTotalMonthlyIncome()) * 100)
       : null,
     emergencyFundMonths: userData.monthlyEssentialExpenses && userData.totalSavings
       ? userData.totalSavings / userData.monthlyEssentialExpenses
       : null,
-    netWorth: userData.totalSavings && getTotalDebt() > 0
-      ? userData.totalSavings - getTotalDebt()
-      : userData.totalSavings ?? null,
+    netWorth: (userData.totalSavings || 0) + getTotalRealEstateValue() - getTotalDebt() - getTotalRealEstateMortgage(),
     totalDebt: getTotalDebt(),
   }
 
@@ -823,7 +898,7 @@ export function WealthWizard({
 
   // ============ TAX CALCULATIONS ============
   const calculateTax = () => {
-    const annualIncome = (userData.monthlyIncome || 0) * 12
+    const annualIncome = ((userData.monthlyIncome || 0) + (userData.monthlyRentalIncome || 0) + getTotalRealEstateRentalIncome()) * 12
     if (annualIncome === 0) return null
 
     // 2024 US Federal Tax Brackets (simplified)
@@ -906,7 +981,7 @@ export function WealthWizard({
           language,
           profile: {
             age: userData.age || 0,
-            salary: (userData.monthlyIncome || 0) * 12,
+            salary: ((userData.monthlyIncome || 0) + (userData.monthlyRentalIncome || 0) + getTotalRealEstateRentalIncome()) * 12,
             otherIncome: 0,
             expenses: (userData.monthlyEssentialExpenses || 0) + (userData.monthlyDiscretionary || 0),
             debt: getTotalDebt(),
@@ -976,6 +1051,55 @@ export function WealthWizard({
     if (language === 'yue') return debtCategoriesYue[category] || category
     if (language === 'zh') return debtCategoriesZh[category] || category
     return category
+  }
+
+  // Real Estate Asset management functions
+  function addRealEstateAsset() {
+    const newAsset: RealEstateAsset = {
+      id: Date.now().toString(),
+      propertyName: '',
+      district: '',
+      propertyType: 'residential',
+      purchasePrice: null,
+      currentValue: null,
+      mortgageBalance: null,
+      monthlyRent: null,
+      isRented: false,
+      monthlyExpenses: null,
+    }
+    setUserData(prev => ({ ...prev, realEstateAssets: [...prev.realEstateAssets, newAsset] }))
+  }
+
+  function updateRealEstateAsset(id: string, field: keyof RealEstateAsset, value: string | number | boolean | null) {
+    setUserData(prev => ({
+      ...prev,
+      realEstateAssets: prev.realEstateAssets.map(a => a.id === id ? { ...a, [field]: value } : a)
+    }))
+  }
+
+  function removeRealEstateAsset(id: string) {
+    setUserData(prev => ({ ...prev, realEstateAssets: prev.realEstateAssets.filter(a => a.id !== id) }))
+  }
+
+  // Calculate total rental income from real estate
+  function getTotalRealEstateRentalIncome(): number {
+    return userData.realEstateAssets
+      .filter(a => a.isRented && a.monthlyRent)
+      .reduce((sum, a) => sum + (a.monthlyRent || 0), 0)
+  }
+
+  // Calculate total real estate value
+  function getTotalRealEstateValue(): number {
+    return userData.realEstateAssets
+      .filter(a => a.currentValue)
+      .reduce((sum, a) => sum + (a.currentValue || 0), 0)
+  }
+
+  // Calculate total mortgage on real estate
+  function getTotalRealEstateMortgage(): number {
+    return userData.realEstateAssets
+      .filter(a => a.mortgageBalance)
+      .reduce((sum, a) => sum + (a.mortgageBalance || 0), 0)
   }
 
   // ============ RENDER ============
@@ -1121,6 +1245,18 @@ export function WealthWizard({
                   </label>
                 </div>
 
+                <div className="form-row">
+                  <label>
+                    <span>{t.qRentalIncome}</span>
+                    <input
+                      type="text"
+                      value={formatInputValue(userData.monthlyRentalIncome)}
+                      onChange={(e) => updateData('monthlyRentalIncome', parseInputValue(e.target.value))}
+                      placeholder="0"
+                    />
+                  </label>
+                </div>
+
                 <div className="form-row two-col">
                   <label>
                     <span>{t.qEssential}</span>
@@ -1224,6 +1360,136 @@ export function WealthWizard({
                     <div className="debt-total">
                       <span>Total Debt:</span>
                       <strong>{formatCurrency(getTotalDebt())}</strong>
+                    </div>
+                  )}
+                </div>
+
+                {/* Real Estate Assets Section */}
+                <div className="debt-section">
+                  <div className="debt-header">
+                    <span>{t.qRealEstate}</span>
+                    <button type="button" className="add-debt-btn" onClick={addRealEstateAsset}>
+                      <Plus size={16} /> {t.addRealEstate}
+                    </button>
+                  </div>
+                  
+                  {userData.realEstateAssets.length === 0 && (
+                    <p className="debt-empty">No properties added. Click "Add property" if you own any real estate.</p>
+                  )}
+                  
+                  {userData.realEstateAssets.map((asset, index) => (
+                    <div key={asset.id} className="debt-item">
+                      <div className="debt-item-header">
+                        <span className="debt-number">Property #{index + 1}</span>
+                        <button type="button" className="remove-debt-btn" onClick={() => removeRealEstateAsset(asset.id)}>
+                          <Trash2 size={14} /> {t.removeRealEstate}
+                        </button>
+                      </div>
+                      <div className="debt-item-fields">
+                        <div className="debt-field">
+                          <label>{t.qPropertyName}</label>
+                          <input
+                            type="text"
+                            value={asset.propertyName}
+                            onChange={(e) => updateRealEstateAsset(asset.id, 'propertyName', e.target.value)}
+                            placeholder="e.g., My Flat in Kowloon"
+                          />
+                        </div>
+                        <div className="debt-field">
+                          <label>{t.qDistrict}</label>
+                          <input
+                            type="text"
+                            value={asset.district}
+                            onChange={(e) => updateRealEstateAsset(asset.id, 'district', e.target.value)}
+                            placeholder="e.g., Kowloon City"
+                          />
+                        </div>
+                        <div className="debt-field">
+                          <label>{t.qPropertyType}</label>
+                          <select
+                            value={asset.propertyType}
+                            onChange={(e) => updateRealEstateAsset(asset.id, 'propertyType', e.target.value)}
+                          >
+                            <option value="residential">{t.propertyTypeResidential}</option>
+                            <option value="commercial">{t.propertyTypeCommercial}</option>
+                            <option value="industrial">{t.propertyTypeIndustrial}</option>
+                            <option value="parking">{t.propertyTypeParking}</option>
+                            <option value="other">{t.propertyTypeOther}</option>
+                          </select>
+                        </div>
+                        <div className="debt-field">
+                          <label>{t.qPurchasePrice}</label>
+                          <input
+                            type="text"
+                            value={formatInputValue(asset.purchasePrice)}
+                            onChange={(e) => updateRealEstateAsset(asset.id, 'purchasePrice', parseInputValue(e.target.value))}
+                            placeholder="5,000,000"
+                          />
+                        </div>
+                        <div className="debt-field">
+                          <label>{t.qCurrentValue}</label>
+                          <input
+                            type="text"
+                            value={formatInputValue(asset.currentValue)}
+                            onChange={(e) => updateRealEstateAsset(asset.id, 'currentValue', parseInputValue(e.target.value))}
+                            placeholder="6,000,000"
+                          />
+                        </div>
+                        <div className="debt-field">
+                          <label>{t.qMortgageBalance}</label>
+                          <input
+                            type="text"
+                            value={formatInputValue(asset.mortgageBalance)}
+                            onChange={(e) => updateRealEstateAsset(asset.id, 'mortgageBalance', parseInputValue(e.target.value))}
+                            placeholder="4,000,000"
+                          />
+                        </div>
+                        <div className="debt-field checkbox-field">
+                          <label>
+                            <input
+                              type="checkbox"
+                              checked={asset.isRented}
+                              onChange={(e) => updateRealEstateAsset(asset.id, 'isRented', e.target.checked)}
+                            />
+                            {t.qIsRented}
+                          </label>
+                        </div>
+                        {asset.isRented && (
+                          <>
+                            <div className="debt-field">
+                              <label>{t.qMonthlyRent}</label>
+                              <input
+                                type="text"
+                                value={formatInputValue(asset.monthlyRent)}
+                                onChange={(e) => updateRealEstateAsset(asset.id, 'monthlyRent', parseInputValue(e.target.value))}
+                                placeholder="15,000"
+                              />
+                            </div>
+                            <div className="debt-field">
+                              <label>{t.qMonthlyExpenses}</label>
+                              <input
+                                type="text"
+                                value={formatInputValue(asset.monthlyExpenses)}
+                                onChange={(e) => updateRealEstateAsset(asset.id, 'monthlyExpenses', parseInputValue(e.target.value))}
+                                placeholder="1,000"
+                              />
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {userData.realEstateAssets.length > 0 && (
+                    <div className="debt-total">
+                      <span>Total Property Value:</span>
+                      <strong>{formatCurrency(getTotalRealEstateValue())}</strong>
+                      {getTotalRealEstateRentalIncome() > 0 && (
+                        <>
+                          <span style={{ marginLeft: 20 }}>Monthly Rental Income:</span>
+                          <strong>{formatCurrency(getTotalRealEstateRentalIncome())}</strong>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
